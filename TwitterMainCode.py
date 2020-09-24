@@ -200,7 +200,7 @@ plt.show()
 
 
 #%% TEST RESAMPLING 
-num_resamp= 1000
+num_resamp= 100
 
 sampled_data={}
 av_repeated = {}
@@ -257,11 +257,12 @@ plt.show()
 
 sampled_data_all = pd.DataFrame()
 for data in sampled_data:
+    
     sampled_data_all.append(sampled_data[data])
 
 
-fig = px.scatter_3d(sampled_data['BLM10M'], x='neu', y='pos', z='neg')
-    
+fig = px.scatter_3d(sampled_data['BLM10M'], x='neu', y='pos', z='neg',color= 'fav')
+#fig = px.scatter_3d(sampled_data['BLM26M'], x='neu', y='pos', z='neg', color= 'g') 
 fig.show()
 a = 1
 # %% clustering, heatmaps, PCA of compound also? 
