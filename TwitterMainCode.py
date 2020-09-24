@@ -224,45 +224,17 @@ plt.show()
 
 #%% 3D plot 
 
-#  fig3D = plt.figure()
-# ax3D = fig3D.add_subplot(111, projection='3d')
-
-# fig3D2 = plt.figure()
-# ax3D2 = fig3D.add_subplot(111, projection='3d')
-
-# colors =['r','b','g']
-
-# for n in range(len(colors)):
-#     data1 = list(sampled_data.keys())[n] 
-#     data2 = list(sampled_data.keys())[n+3] 
-#     ax3D.scatter(sampled_data[data]['pos'], sampled_data[data]['neu'], sampled_data[data]['neg'] , c=colors[n], marker='o')
-#     ax3D2.scatter(sampled_data[data]['pos'], sampled_data[data]['neu'], sampled_data[data]['neg'] , c=colors[n], marker='o')
-
-# ax3D.set_xlabel('Positive')
-# ax3D.set_ylabel('Neutral')
-# ax3D.set_zlabel('Negative')
-# ax3D.set_title('Scatter 10M')
-
-# ax3D.set_xlabel('Positive')
-# ax3D.set_ylabel('Neutral')
-# ax3D.set_zlabel('Negative')
-# ax3D.set_title('Scatter 26M') 
-
-# fig3D = plt.figure()
-# ax3D = fig3D.add_subplot(111, projection='3d')
-# for n in range(len(colors)):
-#     data1 = list(sampled_data.keys())[n] 
-#     data2 = list(sampled_data.keys())[n+3] 
-#     ax3D.scatter(sampled_data[data]['neu'], sampled_data[data]['pos'], sampled_data[data]['neg'] , c=colors[n], marker='o')
-
 sampled_data_all = pd.DataFrame()
 for data in sampled_data:
-    
-    sampled_data_all.append(sampled_data[data])
+    sampled_data[data]['data']= [data] * len(sampled_data[data])
+sampled_data_all = pd.concat ([sampled_data['BLM10M'],sampled_data['BLM26M'],sampled_data['COVID10M'],sampled_data['COVID26M'],sampled_data['control10M'],sampled_data['control26M']])
 
-
-fig = px.scatter_3d(sampled_data['BLM10M'], x='neu', y='pos', z='neg',color= 'fav')
-#fig = px.scatter_3d(sampled_data['BLM26M'], x='neu', y='pos', z='neg', color= 'g') 
+fig = px.scatter_3d(sampled_data_all, x='neu', y='pos', z='neg',color= 'data',opacity=0.7)
+fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
+fig['layout']['yaxis']['autorange'] = "reversed"
 fig.show()
+
 a = 1
+
+
 # %% clustering, heatmaps, PCA of compound also? 
