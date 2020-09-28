@@ -10,6 +10,8 @@ import seaborn as sns
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from mpl_toolkits.mplot3d import Axes3D
 import plotly.express as px
+from sklearn.svm import OneClassSVM
+from numpy import quantile, where, random
 
 #%% RETRIEVE TWEETS: 
 """ 
@@ -231,10 +233,48 @@ sampled_data_all = pd.concat ([sampled_data['BLM10M'],sampled_data['BLM26M'],sam
 
 fig = px.scatter_3d(sampled_data_all, x='neu', y='pos', z='neg',color= 'data',opacity=0.7)
 fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
-fig['layout']['yaxis']['autorange'] = "reversed"
+fig['layout']['xaxis']['autorange'] = "reversed"
 fig.show()
 
 a = 1
 
 
 # %% clustering, heatmaps, PCA of compound also? 
+# One class modelling, 
+# SVM, Model one class and to see how others project in that space. (linear kernel) 
+#pca for one class modeling -> Orthogonal distance and scores... 
+#pca for 1 class... get matrix distances and then project other data on this space. 
+
+# %% One class modelling 
+
+# Define SVM parameters 
+svm = OneClassSVM(kernel='linear', nu=0.03)
+print(svm)
+# define training and test data 
+sampled_data_numeric= sampled_data['BLM10M'][['neg','neu','pos','compound']]
+sampled_data_numeric_test=sampled_data['BLM26M'][['neg','neu','pos','compound']]
+
+# Train algorithm
+BLM_svm= svm.fit(sampled_data_numeric)
+# Test algorithm
+pred = svm.predict(sampled_data_numeric_test)
+anom_index = where(pred==-1) # class -1 = outlier 
+values = np.array(sampled_data_numeric_test)[anom_index] #identify outlier samples
+df_values= pd.DataFrame(values,columns= ['neg','neu','pos','compound'])
+
+# identify which sample ID has been marked as outlier
+ids= [None] * len(values) 
+for v, val in enumerate(values):
+    ids[v]=sampled_data_numeric_test.loc[(sampled_data_numeric_test['neg'] == df_values['neg'][v]) 
+    & (sampled_data_numeric_test['neu'] == df_values['neu'][v])
+    & (sampled_data_numeric_test['pos'] == df_values['pos'][v])
+    & (sampled_data_numeric_test['compound'] == df_values['compound'][v])].index.values[0]
+
+#prepare data for 3D plot 
+sampled_data_numeric_test ['out']= [0]*len(sampled_data_numeric_test) #class label
+sampled_data_numeric_test.loc[ids,'out']= 1 # outlier label 
+
+fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7)
+fig.show()
+c=1
+# %%
