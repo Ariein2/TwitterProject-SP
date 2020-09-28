@@ -248,11 +248,62 @@ a = 1
 # %% One class modelling 
 
 # Define SVM parameters 
-svm = OneClassSVM(kernel='linear', nu=0.03)
+nu_list = [0.15, 0.14, 0.13, 0.12, 0.11, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05]
+#An upper bound on the fraction of training errors 
+# and a lower bound of the fraction of support vectors. 
+# Should be in the interval (0, 1]. By default 0.5 will be taken.
+num_out= [None] * len(nu_list) 
+for n, nu1 in enumerate(nu_list): #check param nu 
+    svm = OneClassSVM(kernel='linear', nu=nu1)
+    print(svm)
+    # define training and test data 
+    sampled_data_numeric= sampled_data['BLM10M'][['neg','neu','pos','compound']]
+    sampled_data_numeric_test=sampled_data['BLM26M'][['neg','neu','pos','compound']]
+
+    # Train algorithm
+    BLM_svm= svm.fit(sampled_data_numeric)
+    # Test algorithm
+    pred = svm.predict(sampled_data_numeric_test)
+    anom_index = where(pred==-1) # class -1 = outlier 
+    values = np.array(sampled_data_numeric_test)[anom_index] #identify outlier samples
+    df_values= pd.DataFrame(values,columns= ['neg','neu','pos','compound'])
+
+    # identify which sample ID has been marked as outlier
+    ids= [None] * len(values) 
+    for v, val in enumerate(values):
+        ids[v]=sampled_data_numeric_test.loc[(sampled_data_numeric_test['neg'] == df_values['neg'][v]) 
+        & (sampled_data_numeric_test['neu'] == df_values['neu'][v])
+        & (sampled_data_numeric_test['pos'] == df_values['pos'][v])
+        & (sampled_data_numeric_test['compound'] == df_values['compound'][v])].index.values[0]
+    num_out[n]= len(ids)
+    #prepare data for 3D plot 
+    '''
+    sampled_data_numeric_test ['out']= [0]*len(sampled_data_numeric_test) #class label
+    sampled_data_numeric_test.loc[ids,'out']= 1 # outlier label 
+
+    fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7,
+    title='BLM one-class')
+    fig.show()'''
+    
+his= plt.bar(np.arange(len(nu_list)),num_out)
+plt.xticks(np.arange(len(nu_list)), nu_list)
+plt.ylabel('Number of outliers')
+plt.xlabel('Value of parameter nu')
+plt.show()
+
+
+# %%
+
+# %% One class modelling right nu
+
+# Define SVM parameters 
+nu_selected = 0.03
+num_out= [None] * len(nu_list) 
+svm = OneClassSVM(kernel='linear', nu=nu_selected)
 print(svm)
 # define training and test data 
-sampled_data_numeric= sampled_data['BLM10M'][['neg','neu','pos','compound']]
-sampled_data_numeric_test=sampled_data['BLM26M'][['neg','neu','pos','compound']]
+sampled_data_numeric= sampled_data['control10M'][['neg','neu','pos','compound']]
+sampled_data_numeric_test=sampled_data['control26M'][['neg','neu','pos','compound']]
 
 # Train algorithm
 BLM_svm= svm.fit(sampled_data_numeric)
@@ -269,12 +320,17 @@ for v, val in enumerate(values):
     & (sampled_data_numeric_test['neu'] == df_values['neu'][v])
     & (sampled_data_numeric_test['pos'] == df_values['pos'][v])
     & (sampled_data_numeric_test['compound'] == df_values['compound'][v])].index.values[0]
-
+num_out[n]= len(ids)
 #prepare data for 3D plot 
+
 sampled_data_numeric_test ['out']= [0]*len(sampled_data_numeric_test) #class label
 sampled_data_numeric_test.loc[ids,'out']= 1 # outlier label 
 
-fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7)
+fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7,
+title='control one-class')
 fig.show()
+
 c=1
+
+
 # %%
