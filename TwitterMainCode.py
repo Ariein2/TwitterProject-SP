@@ -155,7 +155,7 @@ plt.title('Compound scores CONTROL data after merging')
 plt.show()
 
 
-#%% DATA SELECTION: Select a subset of data to work with. The subset must be as big as the smallest dataset. 
+#%% DATA SAMPLING: Select a subset of data to work with. The subset must be as big as the smallest dataset. 
 # NOTE: REMOVE RANDOM STATE BEFORE RUNNING!!!!! Sets a constant seed. 
 # It also changes the type of the variables reply,rts and fav to numeric
 length_datasets =[]
@@ -245,25 +245,26 @@ a = 1
 #pca for one class modeling -> Orthogonal distance and scores... 
 #pca for 1 class... get matrix distances and then project other data on this space. 
 
-# %% One class modelling 
+# %% One class modelling : check nu
 
 # Define SVM parameters 
-nu_list = [0.15, 0.14, 0.13, 0.12, 0.11, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05]
+data_s= 'COVID'
+nu_list = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.03, 0.02, 0.01, 0.005, 0.003, 0.001,0.0005]
 #An upper bound on the fraction of training errors 
 # and a lower bound of the fraction of support vectors. 
 # Should be in the interval (0, 1]. By default 0.5 will be taken.
 num_out= [None] * len(nu_list) 
 for n, nu1 in enumerate(nu_list): #check param nu 
     svm = OneClassSVM(kernel='linear', nu=nu1)
-    print(svm)
+
     # define training and test data 
-    sampled_data_numeric= sampled_data['BLM10M'][['neg','neu','pos','compound']]
-    sampled_data_numeric_test=sampled_data['BLM26M'][['neg','neu','pos','compound']]
+    sampled_data_numeric= sampled_data[data_s + '10M'][['neg','neu','pos','compound']]
+    sampled_data_numeric_test=sampled_data[data_s + '26M'][['neg','neu','pos','compound']]
 
     # Train algorithm
     BLM_svm= svm.fit(sampled_data_numeric)
     # Test algorithm
-    pred = svm.predict(sampled_data_numeric_test)
+    pred = BLM_svm.predict(sampled_data_numeric_test)
     anom_index = where(pred==-1) # class -1 = outlier 
     values = np.array(sampled_data_numeric_test)[anom_index] #identify outlier samples
     df_values= pd.DataFrame(values,columns= ['neg','neu','pos','compound'])
@@ -289,26 +290,29 @@ his= plt.bar(np.arange(len(nu_list)),num_out)
 plt.xticks(np.arange(len(nu_list)), nu_list)
 plt.ylabel('Number of outliers')
 plt.xlabel('Value of parameter nu')
+plt.title('Num outliers depending on nu: '+ data_s)
 plt.show()
+
 
 
 # %%
 
-# %% One class modelling right nu
+# %% One class modelling right nu: intra sample 
 
 # Define SVM parameters 
-nu_selected = 0.03
+data_s= 'COVID'
+nu_selected = 0.01
 num_out= [None] * len(nu_list) 
 svm = OneClassSVM(kernel='linear', nu=nu_selected)
 print(svm)
 # define training and test data 
-sampled_data_numeric= sampled_data['control10M'][['neg','neu','pos','compound']]
-sampled_data_numeric_test=sampled_data['control26M'][['neg','neu','pos','compound']]
+sampled_data_numeric= sampled_data[data_s + '10M'][['neg','neu','pos','compound']]
+sampled_data_numeric_test=sampled_data[data_s + '26M'][['neg','neu','pos','compound']]
 
 # Train algorithm
 BLM_svm= svm.fit(sampled_data_numeric)
 # Test algorithm
-pred = svm.predict(sampled_data_numeric_test)
+pred = BLM_svm.predict(sampled_data_numeric_test)
 anom_index = where(pred==-1) # class -1 = outlier 
 values = np.array(sampled_data_numeric_test)[anom_index] #identify outlier samples
 df_values= pd.DataFrame(values,columns= ['neg','neu','pos','compound'])
@@ -327,7 +331,7 @@ sampled_data_numeric_test ['out']= [0]*len(sampled_data_numeric_test) #class lab
 sampled_data_numeric_test.loc[ids,'out']= 1 # outlier label 
 
 fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7,
-title='control one-class')
+title= data_s + ' one-class')
 fig.show()
 
 c=1
