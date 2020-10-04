@@ -13,30 +13,6 @@ import plotly.express as px
 from sklearn.svm import OneClassSVM
 from numpy import quantile, where, random
 
-#%% RETRIEVE TWEETS: 
-""" 
-### RETRIEVE TWEETS (script): 
-
-# searchTerm = input("Enter Keywords (Space Seperated): ")
-# start=input("Enter Start date in format YYYY-MM-DD: ")
-# end=input("Enter End date in format YYYY-MM-DD: ")
-
-
-searchTerm = "#COVID19"
-start = "2020-05-10"
-end = "2020-05-11"
-
-tweetCriteria = got.manager.TweetCriteria().setQuerySearch(searchTerm)\
-                                            .setSince(start)\
-                                            .setUntil(end)\
-                                            .setMaxTweets(50)
-                                            
-                                        
-
-tweet = got.manager.TweetManager.getTweets(tweetCriteria)
- """
-
-
 ### RETREIVE TWEETS (Run in terminal)
 
 #10-15th May 2020
@@ -99,7 +75,7 @@ for i, datas in enumerate(all_data):
     removed_data.append (filtered_data[datas][equal_check])
     all_data_removed [datas] = removed_data 
 
-    #Display info on samples removed 
+    #Display info on samples removed: 
     count_removed = len(removed_data) 
     print('Original size of data ' + datas +': ' + str(len(prep_data)))
     print('New size of data ' + datas + ': ' + str(len(filtered_data[datas]))) 
@@ -154,6 +130,30 @@ plt.boxplot([scores_all['control10M']['compound'], scores_all['control10M']['com
 plt.title('Compound scores CONTROL data after merging')
 plt.show()
 
+#%% TEST RESAMPLING 
+num_resamp= 100
+
+sampled_data={}
+av_repeated = {}
+for resamp in range (num_resamp):
+    save_comp_mean=[]
+    for data in scores_all:   
+        sampled_data[data] =  scores_all[data].sample(min_sample) #random_state=1
+        sampled_data[data]['reply'] = pd.to_numeric(sampled_data[data]['reply'])
+        sampled_data[data]['rts'] = pd.to_numeric(sampled_data[data]['rts'])
+        sampled_data[data]['fav'] = pd.to_numeric(sampled_data[data]['fav'])
+        save_comp_mean.append(np.mean(sampled_data[data]['compound']))
+    av_repeated[resamp]= save_comp_mean
+
+av_repeated2=pd.DataFrame(av_repeated).transpose()
+av_repeated2.columns = list(sampled_data.keys())
+fig, ax= plt.subplots()
+ax.axhline(y=0)
+av_repeated2.boxplot()
+plt.xlabel('Dataset')
+plt.ylabel('Score')
+plt.title('Compound scores ' + str(num_resamp) + ' resampling')
+plt.show()
 
 #%% DATA SAMPLING: Select a subset of data to work with. The subset must be as big as the smallest dataset. 
 # NOTE: REMOVE RANDOM STATE BEFORE RUNNING!!!!! Sets a constant seed. 
@@ -176,56 +176,61 @@ print('Sampling completed.')
 
 save_comp = []
 save_rts = []
+save_fav = []
+save_rep = []
 #Plot each sampled datset:neg, neu, pos
 for data in sampled_data:   
     plt.figure()
     figs = sampled_data[data].boxplot(column= ['neg','neu','pos'])
     plt.title(data + ' all variables boxplot')
+    plt.xlabel('Dataset')
+    plt.ylabel('Score')
     plt.show()
     #save individual variables for plotting
     save_comp.append(sampled_data[data]['compound'])
     save_rts.append(sampled_data[data]['rts'])
+    save_fav.append(sampled_data[data]['fav'])
+    save_rep.append(sampled_data[data]['reply'])
+
 
 #Plot compound 
 fig, ax= plt.subplots()
 ax.axhline(y=0)
 plt.boxplot(save_comp ,labels= sampled_data.keys())
 plt.title('Compound scores')
+plt.xlabel('Dataset')
+plt.ylabel('Score')
 plt.show()
 
 #Plot RTs  
 fig, ax= plt.subplots()
 ax.axhline(y=0)
 plt.boxplot(save_rts ,labels= sampled_data.keys())
-plt.title('RT values')
+plt.title('Number of RTs')
+plt.xlabel('Dataset')
+plt.ylabel('Num RTs')
 plt.show()
 
-
-#%% TEST RESAMPLING 
-num_resamp= 100
-
-sampled_data={}
-av_repeated = {}
-for resamp in range (num_resamp):
-    save_comp_mean=[]
-    for data in scores_all:   
-        sampled_data[data] =  scores_all[data].sample(min_sample) #random_state=1
-        sampled_data[data]['reply'] = pd.to_numeric(sampled_data[data]['reply'])
-        sampled_data[data]['rts'] = pd.to_numeric(sampled_data[data]['rts'])
-        sampled_data[data]['fav'] = pd.to_numeric(sampled_data[data]['fav'])
-        save_comp_mean.append(np.mean(sampled_data[data]['compound']))
-    av_repeated[resamp]= save_comp_mean
-
-av_repeated2=pd.DataFrame(av_repeated).transpose()
-av_repeated2.columns = list(sampled_data.keys())
+#Plot Favs  
 fig, ax= plt.subplots()
 ax.axhline(y=0)
-av_repeated2.boxplot()
-plt.title('Compound scores ' + str(num_resamp) + ' resampling')
+plt.boxplot(save_fav ,labels= sampled_data.keys())
+plt.title('Number of favourites')
+plt.xlabel('Dataset')
+plt.ylabel('Num favs')
 plt.show()
 
-#%% 3D plot 
+#Plot Reply  
+fig, ax= plt.subplots()
+ax.axhline(y=0)
+plt.boxplot(save_rep ,labels= sampled_data.keys())
+plt.title('Number of replies')
+plt.xlabel('Dataset')
+plt.ylabel('Num of replies')
+plt.show()
 
+
+#%% 3D plot for samples 
 sampled_data_all = pd.DataFrame()
 for data in sampled_data:
     sampled_data[data]['data']= [data] * len(sampled_data[data])
@@ -236,26 +241,18 @@ fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
 fig['layout']['xaxis']['autorange'] = "reversed"
 fig.show()
 
-a = 1
-
-
-# %% clustering, heatmaps, PCA of compound also? 
-# One class modelling, 
-# SVM, Model one class and to see how others project in that space. (linear kernel) 
-#pca for one class modeling -> Orthogonal distance and scores... 
-#pca for 1 class... get matrix distances and then project other data on this space. 
-
 # %% One class modelling : check nu
 
 # Define SVM parameters 
-data_s= 'COVID'
-nu_list = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.03, 0.02, 0.01, 0.005, 0.003, 0.001,0.0005]
-#An upper bound on the fraction of training errors 
+data_s = 'BLM'
+kernel = 'linear' 
+nu_list = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.03, 0.02, 0.01, 0.005, 0.003, 0.001, 0.0005]
+# An upper bound on the fraction of training errors 
 # and a lower bound of the fraction of support vectors. 
 # Should be in the interval (0, 1]. By default 0.5 will be taken.
 num_out= [None] * len(nu_list) 
 for n, nu1 in enumerate(nu_list): #check param nu 
-    svm = OneClassSVM(kernel='linear', nu=nu1)
+    svm = OneClassSVM(kernel= kernel, nu=nu1)
 
     # define training and test data 
     sampled_data_numeric= sampled_data[data_s + '10M'][['neg','neu','pos','compound']]
@@ -277,32 +274,23 @@ for n, nu1 in enumerate(nu_list): #check param nu
         & (sampled_data_numeric_test['pos'] == df_values['pos'][v])
         & (sampled_data_numeric_test['compound'] == df_values['compound'][v])].index.values[0]
     num_out[n]= len(ids)
-    #prepare data for 3D plot 
-    '''
-    sampled_data_numeric_test ['out']= [0]*len(sampled_data_numeric_test) #class label
-    sampled_data_numeric_test.loc[ids,'out']= 1 # outlier label 
 
-    fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7,
-    title='BLM one-class')
-    fig.show()'''
-    
+#Histogram 
 his= plt.bar(np.arange(len(nu_list)),num_out)
 plt.xticks(np.arange(len(nu_list)), nu_list)
 plt.ylabel('Number of outliers')
 plt.xlabel('Value of parameter nu')
-plt.title('Num outliers depending on nu: '+ data_s)
+plt.title(kernel + ': Num outliers depending on nu '+ data_s)
 plt.show()
 
 
-
-# %%
-
-# %% One class modelling right nu: intra sample 
+# %% One class modelling right nu: 
 
 # Define SVM parameters 
-data_s= 'COVID'
+data_s= 'BLM'
+kernel = 'linear'
 nu_selected = 0.01
-num_out= [None] * len(nu_list) 
+num_out= [] 
 svm = OneClassSVM(kernel='linear', nu=nu_selected)
 print(svm)
 # define training and test data 
@@ -324,17 +312,115 @@ for v, val in enumerate(values):
     & (sampled_data_numeric_test['neu'] == df_values['neu'][v])
     & (sampled_data_numeric_test['pos'] == df_values['pos'][v])
     & (sampled_data_numeric_test['compound'] == df_values['compound'][v])].index.values[0]
-num_out[n]= len(ids)
-#prepare data for 3D plot 
+num_out= len(ids)
 
+#prepare data for 3D plot 
 sampled_data_numeric_test ['out']= [0]*len(sampled_data_numeric_test) #class label
 sampled_data_numeric_test.loc[ids,'out']= 1 # outlier label 
 
 fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7,
-title= data_s + ' one-class')
-fig.show()
+title= data_s + ' one-class ('+ kernel +')')
+fig.show() 
 
+extracted_data = sampled_data[data_s + '26M'].loc[ids]
+extracted_data = extracted_data.drop(columns=['pos','neg','neu'])
+
+c=1
+# Print results: 
+print('The number of discrepant samples are: '+ str(num_out))
+print(extracted_data)
 c=1
 
 
-# %%
+# %% One class modelling : RBF check different nu and gamma values 
+
+# RBF: 
+# Define SVM parameters 
+data_s= 'BLM'
+nu_list = [0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.03, 0.02, 0.01, 0.005, 0.003, 0.001, 0.0005]
+gamma = 'scale' #scale= 1 / (n_features * X.var()), #auto= 1 / n_features
+
+num_out= [None] * len(nu_list) 
+for n, nu1 in enumerate(nu_list): #check param nu 
+    svm = OneClassSVM(kernel='rbf', nu=nu1,gamma ='scale')
+
+    # define training and test data 
+    sampled_data_numeric= sampled_data[data_s + '10M'][['neg','neu','pos','compound']]
+    sampled_data_numeric_test=sampled_data[data_s + '26M'][['neg','neu','pos','compound']]
+
+    # Train algorithm
+    BLM_svm= svm.fit(sampled_data_numeric)
+    # Test algorithm
+    pred = BLM_svm.predict(sampled_data_numeric_test)
+    anom_index = where(pred==-1) # class -1 = outlier 
+    values = np.array(sampled_data_numeric_test)[anom_index] #identify outlier samples
+    df_values= pd.DataFrame(values,columns= ['neg','neu','pos','compound'])
+
+    # identify which sample ID has been marked as outlier
+    ids= [None] * len(values) 
+    for v, val in enumerate(values):
+        ids[v]=sampled_data_numeric_test.loc[(sampled_data_numeric_test['neg'] == df_values['neg'][v]) 
+        & (sampled_data_numeric_test['neu'] == df_values['neu'][v])
+        & (sampled_data_numeric_test['pos'] == df_values['pos'][v])
+        & (sampled_data_numeric_test['compound'] == df_values['compound'][v])].index.values[0]
+    num_out[n]= len(ids)
+
+#Histogram 
+his= plt.bar(np.arange(len(nu_list)),num_out)
+plt.xticks(np.arange(len(nu_list)), nu_list)
+plt.ylabel('Number of outliers')
+plt.xlabel('Value of parameter nu')
+plt.title('Num outliers depending on nu: '+ data_s)
+plt.show()
+
+
+# %% One class modelling right nu: intra sample 
+
+# Define SVM parameters  try with RBF
+data_s = 'BLM'
+kernel = 'rbf'
+gamma = 'scale' #auto or scale 
+nu_selected = 0.01
+
+num_out= [] 
+svm = OneClassSVM(kernel=kernel, nu=nu_selected, gamma=gamma)
+print(svm)
+# define training and test data 
+sampled_data_numeric= sampled_data[data_s + '10M'][['neg','neu','pos','compound']]
+sampled_data_numeric_test=sampled_data[data_s + '26M'][['neg','neu','pos','compound']]
+
+# Train algorithm
+BLM_svm= svm.fit(sampled_data_numeric)
+# Test algorithm
+pred = BLM_svm.predict(sampled_data_numeric_test)
+anom_index = where(pred==-1) # class -1 = outlier 
+values = np.array(sampled_data_numeric_test)[anom_index] #identify outlier samples
+df_values= pd.DataFrame(values,columns= ['neg','neu','pos','compound'])
+
+# identify which sample ID has been marked as outlier
+ids= [None] * len(values) 
+for v, val in enumerate(values):
+    ids[v]=sampled_data_numeric_test.loc[(sampled_data_numeric_test['neg'] == df_values['neg'][v]) 
+    & (sampled_data_numeric_test['neu'] == df_values['neu'][v])
+    & (sampled_data_numeric_test['pos'] == df_values['pos'][v])
+    & (sampled_data_numeric_test['compound'] == df_values['compound'][v])].index.values[0]
+num_out= len(ids)
+
+#prepare data for 3D plot 
+sampled_data_numeric_test ['out']= [0]*len(sampled_data_numeric_test) #class label
+sampled_data_numeric_test.loc[ids,'out']= 1 # outlier label 
+
+fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7,
+title= data_s + ' one-class ('+ kernel + ': ' + gamma + ')' + ' nu: ' + str(nu_selected))
+fig.show() 
+
+extracted_data = sampled_data[data_s + '26M'].loc[ids]
+extracted_data = extracted_data.drop(columns=['pos','neg','neu'])
+
+# Print results: 
+print('The number of discrepant samples are: '+ str(num_out))
+print(extracted_data)
+c=1
+# %% FUNCTION ONE-CLASS MODEL 
+
+    
