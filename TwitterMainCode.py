@@ -284,7 +284,7 @@ plt.title(kernel + ': Num outliers depending on nu '+ data_s)
 plt.show()
 
 
-# %% One class modelling right nu: intra sample 
+# %% One class modelling right nu: 
 
 # Define SVM parameters 
 data_s= 'BLM'
@@ -377,12 +377,13 @@ plt.show()
 # %% One class modelling right nu: intra sample 
 
 # Define SVM parameters  try with RBF
-data_s= 'BLM'
-kernel= 'rbf'
+data_s = 'BLM'
+kernel = 'rbf'
+gamma = 'scale' #auto or scale 
 nu_selected = 0.01
 
 num_out= [] 
-svm = OneClassSVM(kernel=kernel, nu=nu_selected, gamma='scale')
+svm = OneClassSVM(kernel=kernel, nu=nu_selected, gamma=gamma)
 print(svm)
 # define training and test data 
 sampled_data_numeric= sampled_data[data_s + '10M'][['neg','neu','pos','compound']]
@@ -410,14 +411,14 @@ sampled_data_numeric_test ['out']= [0]*len(sampled_data_numeric_test) #class lab
 sampled_data_numeric_test.loc[ids,'out']= 1 # outlier label 
 
 fig = px.scatter_3d(sampled_data_numeric_test, x='neu', y='pos', z='neg',color='out',opacity=0.7,
-title= data_s + ' one-class ('+ kernel + ')')
+title= data_s + ' one-class ('+ kernel + ': ' + gamma + ')' + ' nu: ' + str(nu_selected))
 fig.show() 
 
 extracted_data = sampled_data[data_s + '26M'].loc[ids]
 extracted_data = extracted_data.drop(columns=['pos','neg','neu'])
 
 # Print results: 
-print(kernel + 'The number of discrepant samples are: '+ str(num_out))
+print('The number of discrepant samples are: '+ str(num_out))
 print(extracted_data)
 c=1
 # %% FUNCTION ONE-CLASS MODEL 
