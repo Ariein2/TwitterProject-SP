@@ -361,7 +361,7 @@ BLM_svm = svm.fit(train_data)
 
 # Test algorithm
 pred = BLM_svm.predict(test_data)
-anom_index = where(pred == -1)  
+anom_index = np.where(pred == -1)  
 values = np.array(test_data)[anom_index] 
 df_values = pd.DataFrame(values, columns=['neg', 'neu', 'pos', 'compound'])
 
@@ -428,8 +428,7 @@ for n, nu1 in enumerate(nu_list):
         ids[v] = test_data.loc[(test_data['neg'] == df_values['neg'][v]) 
                                                 & (test_data['neu'] == df_values['neu'][v])
                                                 & (test_data['pos'] == df_values['pos'][v])
-                                                & (test_data['compound'] == df_values['compound'][v])]
-                                                .index.values[0]
+                                                & (test_data['compound'] == df_values['compound'][v])].index.values[0]
     num_out[n] = len(ids)
 
 #Histogram 
