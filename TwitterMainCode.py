@@ -133,7 +133,7 @@ print('Sentiment analysis completed.')
 # Check if the datasets are homogeneous enough to be merged
 
 def variable_boxplot(variable, title, label):
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.axhline(y = 0,linewidth=1.5,color='grey')
     plt.boxplot(variable, labels=label,
                 patch_artist=True, widths= 0.6,
@@ -325,7 +325,7 @@ def one_class_parameters(data_s, kernel, nu_list, gamma='scale'):
 
         # Identify which sample IDs have been marked as outliers
         ids = [None] * len(values) 
-        for v, val in enumerate(values):
+        for v, _ in enumerate(values):
             ids[v] = test_data.loc[(test_data['neg'] == df_values['neg'][v]) 
                                     & (test_data['neu'] == df_values['neu'][v])
                                     & (test_data['pos'] == df_values['pos'][v])
@@ -362,7 +362,7 @@ def one_class (data_s, kernel, nu_selected, gamma='scale'):
 
     # identify which sample ID has been marked as outlier
     ids = [None] * len(values) 
-    for v, val in enumerate(values):
+    for v, _ in enumerate(values):
         ids[v] = test_data.loc[(test_data['neg'] == df_values['neg'][v]) 
                                 & (test_data['neu'] == df_values['neu'][v])
                                 & (test_data['pos'] == df_values['pos'][v])
@@ -453,3 +453,4 @@ one_class_parameters(data_s, kernel, nu_list, gamma=gamma)
 nu_selected = 0.01
 one_class(data_s, kernel, nu_selected, gamma=gamma)
 
+#%%
