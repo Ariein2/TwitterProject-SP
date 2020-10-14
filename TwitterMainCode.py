@@ -129,6 +129,42 @@ for i, datas in enumerate (filtered_data): # For each dataset
 
 print('Sentiment analysis completed.')
 
+#%% PARALEL SENTIMENT ANALYSIS: Identify how positive, negative or neutral is a tweet. 
+import multiprocessing as mp
+pool = mp.Pool (mp.cpu_count())
+analyzer = SentimentIntensityAnalyzer()
+scores_all = {}
+
+def func_analysis (ind, sentence, analyzer, selected, row_names):
+    # Check sentiment of each sentence
+    vs = analyzer.polarity_scores(sentence) # Obtain sentiment scores
+    # Add scores to the previous data
+    scores.append([sentence, selected[3][row_names[ind]], 
+                   selected[4][row_names[ind]], selected[5][row_names[ind]], 
+                   vs['neg'], vs['neu'], vs['pos'], vs['compound']])
+    return scores
+
+for i, datas in enumerate (filtered_data): # For each dataset
+    selected = filtered_data[datas]
+    scores = []
+    row_names = selected.index.values # Save original sample ids
+    
+    # Check sentiment of each sentence
+    scores = [pool.apply(func_analysis, args=(ind, sentence, analyzer,selected,row_names)) for ind, sentence in enumerate(selected[6])]
+    pool.close()
+    # Save all info as a dataframe maintaining the original labels (for traceability) 
+    scores_all[datas] = pd.DataFrame(scores, columns=['Text', 'reply', 'rts', 
+                                                      'fav', 'neg', 'neu', 
+                                                      'pos', 'compound'])
+
+    scores_all[datas].index = list(row_names) # Assign saved labels to new dataframe
+    
+    # Add a marker to differentiate samples in the control set (as they will be merged)
+    if (datas == 'kitten10M') or (datas == 'kitten26M'): 
+        scores_all[datas].index = list ('k'+ scores_all[datas].index.astype(str))
+
+print(scores_all)
+print('Sentiment analysis is completed.')
 # %% CHECK DATA TO MERGE:
 # Check if the datasets are homogeneous enough to be merged
 
